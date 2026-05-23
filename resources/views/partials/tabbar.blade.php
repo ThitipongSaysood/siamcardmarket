@@ -1,0 +1,8 @@
+@php $active = $active ?? request()->route()?->getName(); @endphp
+<nav class="tabbar">
+  <a href="{{ route('home') }}" @class(['active' => $active === 'home'])><svg viewBox="0 0 24 24" fill="none"><path d="M3 11l9-7 9 7v9a1 1 0 01-1 1h-5v-6h-6v6H4a1 1 0 01-1-1z" stroke="currentColor" stroke-width="2"/></svg>หน้าแรก</a>
+  <a href="{{ route('auctions.index') }}" @class(['active' => str_starts_with($active ?? '', 'auctions')])><svg viewBox="0 0 24 24" fill="none"><path d="M14 4l6 6M3 21l8-8M9 7l4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>ประมูล</a>
+  <a href="{{ route('live.index') }}" @class(['active' => $active === 'live.index'])><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M10 9l5 3-5 3z" fill="currentColor"/></svg>Live</a>
+  <a href="{{ route('collection.index') }}" @class(['active' => $active === 'collection.index'])><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="8" height="8" rx="2" stroke="currentColor" stroke-width="2"/><rect x="13" y="3" width="8" height="8" rx="2" stroke="currentColor" stroke-width="2"/><rect x="3" y="13" width="8" height="8" rx="2" stroke="currentColor" stroke-width="2"/><rect x="13" y="13" width="8" height="8" rx="2" stroke="currentColor" stroke-width="2"/></svg>Collection</a>
+  <a href="{{ route('profile.show') }}" @class(['active' => $active === 'profile.show'])><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="2"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6" stroke="currentColor" stroke-width="2"/></svg>โปรไฟล์</a>
+</nav>
