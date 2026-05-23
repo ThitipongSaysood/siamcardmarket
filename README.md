@@ -108,6 +108,28 @@ php artisan serve
 
 ---
 
+## Deploy — GitHub Pages (static mockup)
+
+ทุกครั้งที่ push ขึ้น `main`, [.github/workflows/pages.yml](.github/workflows/pages.yml)
+จะรัน `php artisan static:build` แล้วเดปลอย `docs/` ขึ้น GitHub Pages
+
+**เปิดใช้งานครั้งแรก** (ทำครั้งเดียว):
+1. ไปที่ `Settings → Pages` ของ repo
+2. **Source** เลือก `GitHub Actions`
+3. รอ workflow รันเสร็จ (ดู tab Actions) — URL จะอยู่ที่
+   `https://thitipongsaysood.github.io/TCG/`
+
+**Build เองในเครื่อง:**
+```bash
+php artisan static:build           # → docs/
+open docs/index.html
+```
+
+ข้อจำกัด: Pages serve static ไฟล์อย่างเดียว — login/register form ทำงานจริงไม่ได้
+(แสดงหน้าได้แต่ submit ไม่ทำ), POST routes ถูกตัดออก
+
+---
+
 ## Roadmap ถัดไป
 
 - [ ] เชื่อม controllers กับ Eloquent (ตอนนี้แสดง mockup ล้วน)
