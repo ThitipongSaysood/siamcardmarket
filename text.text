@@ -41,3 +41,8 @@
 
 ทำ session close-out (อัพเดต active.md + สร้างไฟล์ใน sessions/) ปิดวัน 
 Commit + push
+
+
+cd /Users/sangkazee/TCG
+php artisan config:clear
+php artisan serve

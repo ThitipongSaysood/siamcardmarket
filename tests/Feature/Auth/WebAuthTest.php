@@ -33,7 +33,7 @@ class WebAuthTest extends TestCase
 
         $response->assertRedirect('/');
         $this->assertAuthenticated();
-        $this->assertDatabaseHas('users', ['email' => 'web@example.com', 'login_provider' => 'email']);
+        $this->assertDatabaseHas('member', ['email' => 'web@example.com', 'login_provider' => 'email']);
         $this->assertDatabaseHas('wallets', ['user_id' => 1]);
     }
 

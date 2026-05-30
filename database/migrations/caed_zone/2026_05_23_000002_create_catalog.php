@@ -6,6 +6,8 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    protected $connection = 'caed_zone';
+
     public function up(): void
     {
         Schema::create('games', function (Blueprint $table) {

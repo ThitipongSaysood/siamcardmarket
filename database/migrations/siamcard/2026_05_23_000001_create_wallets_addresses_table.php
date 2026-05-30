@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('wallets', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->unique()->constrained()->cascadeOnDelete();
+            $table->foreignId('user_id')->unique()->constrained('member')->cascadeOnDelete();
             $table->decimal('balance', 12, 2)->default(0);
             $table->decimal('locked_balance', 12, 2)->default(0);
             $table->timestamps();
@@ -32,7 +32,7 @@ return new class extends Migration
 
         Schema::create('addresses', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('user_id')->constrained('member')->cascadeOnDelete();
             $table->string('recipient', 120);
             $table->string('phone', 20);
             $table->string('line1', 200);

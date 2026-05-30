@@ -1,50 +1,66 @@
 # Database Schema — CARD ZONE (The Ultimate TCG Marketplace)
 
 ออกแบบฐานข้อมูลรองรับ 3 ระบบ: Front Website / Seller Dashboard / Admin System
-DB ที่ใช้จริง: **MariaDB 10.3** (DB name: `caed_zone`) — ทุกตารางมี `created_at`, `updated_at`
+DB engine: **MySQL/MariaDB** — ทุกตารางมี `created_at`, `updated_at`
 
-> **SQL Source of Truth:** [database/caed_zone.sql](database/caed_zone.sql) (phpMyAdmin dump, 2026-05-26)
-> เอกสารนี้ sync จาก SQL จริงล่าสุด — ส่วนที่ยังไม่ implement ระบุชัดเจนใน §0
+> **Multi-database setup (since 2026-05-30):** แยกเป็น 2 DBs บน MySQL instance เดียวกัน
+> - **`siamcard`** = auth + identity (default connection)
+> - **`caed_zone`** = business data (catalog/orders/auctions) — [SQL source of truth](database/caed_zone.sql)
 
 ---
 
 ## 0. Implementation Status
 
-### ✅ Implemented (11 ตาราง — มีใน [caed_zone.sql](database/caed_zone.sql))
+### 🟢 DB `siamcard` (auth/identity — default Laravel connection)
 
 | ตาราง | Records | หมวด |
 |------|---------|------|
-| `users` | 2 | สมาชิก |
-| `wallets` | 2 | สมาชิก |
-| `wallet_transactions` | 0 (schema only) | สมาชิก |
+| `member` | 2 (migrated) | ผู้ใช้ (แทน `users` ของ Laravel default) |
+| `wallets` | 2 (migrated) | กระเป๋าเงิน · FK → `siamcard.member` |
+| `wallet_transactions` | 0 | รายการเดินบัญชี |
+| `addresses` | 0 | ที่อยู่จัดส่ง · FK → `siamcard.member` |
+| `personal_access_tokens` | — | Sanctum API tokens |
+| `password_reset_tokens` | — | reset password |
+
+**Migrations:** [`database/migrations/siamcard/`](database/migrations/siamcard/)
+
+### 🔵 DB `caed_zone` (business — secondary connection)
+
+| ตาราง | Records | หมวด |
+|------|---------|------|
 | `games` | 2 | แคตตาล็อก |
 | `sets` | 2 | แคตตาล็อก |
 | `shops` | 1 | แคตตาล็อก |
 | `products` | 2 | แคตตาล็อก |
 | `product_serials` | 2 | แคตตาล็อก |
-| `orders` | 1 | คำสั่งซื้อ |
+| `orders` | 1 | คำสั่งซื้อ · FK → `siamcard.member.id` (cross-DB) |
 | `order_items` | 1 | คำสั่งซื้อ |
 | `auctions` | 1 | ประมูล |
-| `bids` | 1 | ประมูล |
+| `bids` | 1 | ประมูล · FK → `siamcard.member.id` (cross-DB) |
 
-### 📝 Planned (10 ตาราง — ยังไม่มีใน SQL จริง)
+**Schema source:** [`database/caed_zone.sql`](database/caed_zone.sql) (phpMyAdmin dump)
+**Migrations (reference only):** [`database/migrations/caed_zone/`](database/migrations/caed_zone/) — ไม่ auto-load
 
-| หมวด | ตาราง |
-|------|------|
-| ที่อยู่/ขนส่ง | `addresses`, `shipments` |
-| Live เปิดซอง | `live_sessions`, `live_queues` |
-| คลังการ์ด | `collection_items`, `wishlists` |
-| PSA | `psa_submissions`, `psa_items` |
-| Buy-Back | `buyback_listings`, `buyback_requests` |
-| ระบบ | `membership_tiers`, `notifications`, `audit_logs` |
+### 📝 Planned (ยังไม่ implement)
 
-### ⚠️ Schema Drift (SQL จริง vs spec ใน §2-8)
+| หมวด | ตาราง | DB ที่จะอยู่ |
+|------|------|-------------|
+| ขนส่ง | `shipments` | `caed_zone` |
+| Live เปิดซอง | `live_sessions`, `live_queues` | `caed_zone` |
+| คลังการ์ด | `collection_items`, `wishlists` | `caed_zone` |
+| PSA | `psa_submissions`, `psa_items` | `caed_zone` |
+| Buy-Back | `buyback_listings`, `buyback_requests` | `caed_zone` |
+| ระบบ | `membership_tiers`, `notifications` | `siamcard` |
+| Audit | `audit_logs` | `siamcard` |
 
-| จุด | SQL จริง | spec ในเอกสาร | แนวทาง |
-|-----|----------|---------------|--------|
-| `bids.locked_txn_id` | ❌ ไม่มี | มี (Anti-Spam Shield) | ต้องเพิ่ม migration ตอน implement wallet lock |
-| `sets.code` | VARCHAR(20) | VARCHAR(8) | spec ปรับเป็น VARCHAR(20) ตามจริง |
-| `users.email` | nullable + UNIQUE | UNIQUE NOT NULL | spec ปรับเป็น nullable (รองรับ social login ที่ยังไม่ผูก email) |
+### ⚠️ Schema Drift (spec vs reality)
+
+| จุด | SQL จริง | spec | แนวทาง |
+|-----|----------|------|--------|
+| User table name | `member` (siamcard) | `users` | spec ใช้ `users`, code ใช้ `member` |
+| `bids.locked_txn_id` | ❌ ไม่มี | มี (Anti-Spam Shield) | ต้องเพิ่มตอน implement Wallet Lock |
+| `sets.code` | VARCHAR(20) | VARCHAR(8) | spec ปรับเป็น VARCHAR(20) |
+| `member.email` | nullable + UNIQUE | UNIQUE NOT NULL | spec ปรับเป็น nullable (รองรับ social login) |
 
 ---
 

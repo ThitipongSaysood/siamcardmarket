@@ -39,7 +39,7 @@ class AuthTest extends TestCase
             ->assertJsonPath('user.wallet.balance', 0)
             ->assertJsonPath('token_type', 'Bearer');
 
-        $this->assertDatabaseHas('users', ['email' => 'panya@example.com']);
+        $this->assertDatabaseHas('member', ['email' => 'panya@example.com']);
         $this->assertDatabaseHas('wallets', ['user_id' => 1, 'balance' => 0]);
     }
 

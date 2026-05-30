@@ -16,6 +16,8 @@ class User extends Authenticatable
 {
     use HasApiTokens, Notifiable;
 
+    protected $table = 'member';
+
     protected function casts(): array
     {
         return [
