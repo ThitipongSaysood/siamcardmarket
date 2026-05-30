@@ -4,10 +4,16 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Wallet;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
+use Laravel\Socialite\Facades\Socialite;
+use Laravel\Socialite\Two\User as SocialUser;
+use Throwable;
 
 class AuthController extends Controller
 {
@@ -28,6 +34,7 @@ class AuthController extends Controller
         }
 
         $request->session()->regenerate();
+        $this->ensureWallet(Auth::user());
         return redirect()->intended(route('home'));
     }
 
@@ -45,9 +52,19 @@ class AuthController extends Controller
             'password'     => ['required', 'confirmed', Password::min(8)],
         ]);
 
-        $user = User::create($data);
-        Auth::login($user);
+        $user = DB::transaction(function () use ($data) {
+            $user = User::create([
+                'display_name'   => $data['display_name'],
+                'email'          => $data['email'],
+                'phone'          => $data['phone'] ?? null,
+                'password'       => Hash::make($data['password']),
+                'login_provider' => 'email',
+            ]);
+            $this->ensureWallet($user);
+            return $user->refresh();
+        });
 
+        Auth::login($user);
         return redirect()->route('home');
     }
 
@@ -57,5 +74,86 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
         return redirect()->route('home');
+    }
+
+    /* ---------- Social OAuth (LINE / Google) ---------- */
+
+    public function redirectToProvider(string $provider): RedirectResponse
+    {
+        $this->assertProvider($provider);
+        return Socialite::driver($provider)->redirect();
+    }
+
+    public function handleProviderCallback(string $provider, Request $request): RedirectResponse
+    {
+        $this->assertProvider($provider);
+
+        try {
+            $socialUser = Socialite::driver($provider)->user();
+        } catch (Throwable $e) {
+            return redirect()->route('login')->withErrors([
+                'email' => 'เข้าสู่ระบบด้วย '.strtoupper($provider).' ไม่สำเร็จ',
+            ]);
+        }
+
+        $user = $this->upsertSocialUser($provider, $socialUser);
+        Auth::login($user, remember: true);
+        $request->session()->regenerate();
+
+        return redirect()->intended(route('home'));
+    }
+
+    /* ---------- Helpers ---------- */
+
+    private function assertProvider(string $provider): void
+    {
+        if (! in_array($provider, ['line', 'google'], strict: true)) {
+            abort(404);
+        }
+    }
+
+    private function upsertSocialUser(string $provider, SocialUser $socialUser): User
+    {
+        return DB::transaction(function () use ($provider, $socialUser) {
+            $providerUid = (string) $socialUser->getId();
+            $email       = $socialUser->getEmail();
+
+            $user = User::where('login_provider', $provider)
+                ->where('provider_uid', $providerUid)
+                ->first();
+
+            if (! $user && $email) {
+                $user = User::where('email', $email)->first();
+                if ($user) {
+                    $user->update([
+                        'login_provider' => $provider,
+                        'provider_uid'   => $providerUid,
+                        'avatar_url'     => $user->avatar_url ?: $socialUser->getAvatar(),
+                    ]);
+                }
+            }
+
+            if (! $user) {
+                $user = User::create([
+                    'display_name'   => $socialUser->getName() ?: $socialUser->getNickname() ?: 'CardZone User',
+                    'email'          => $email,
+                    'login_provider' => $provider,
+                    'provider_uid'   => $providerUid,
+                    'avatar_url'     => $socialUser->getAvatar(),
+                    'password'       => null,
+                ]);
+            }
+
+            $this->ensureWallet($user);
+            return $user->refresh();
+        });
+    }
+
+    private function ensureWallet(User $user): void
+    {
+        Wallet::firstOrCreate(
+            ['user_id' => $user->id],
+            ['balance' => 0, 'locked_balance' => 0],
+        );
     }
 }

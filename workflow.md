@@ -39,7 +39,7 @@
 | # | URL | View | สิทธิ์ | สรุปการทำงาน |
 |---|-----|------|--------|--------------|
 | 1 | `/` | [home.blade.php](resources/views/home.blade.php) | public | Live banner · หมวดเกม · Booster ใหม่ · Auction Hot |
-| 2 | `/login` | [auth/login.blade.php](resources/views/auth/login.blade.php) | guest | Email / LINE / Facebook |
+| 2 | `/login` | [auth/login.blade.php](resources/views/auth/login.blade.php) | guest | Email / LINE / Google |
 | 3 | `/register` | [auth/register.blade.php](resources/views/auth/register.blade.php) | guest | สมัครสมาชิก |
 | 4 | `/products` | [products/index.blade.php](resources/views/products/index.blade.php) | public | รายการ Booster Pack + filter เกม/เซ็ต/ราคา |
 | 5 | `/products/{id}` | [products/show.blade.php](resources/views/products/show.blade.php) | public | รายละเอียดสินค้า + Serial example |
@@ -83,7 +83,7 @@ Guest → /login → POST /login → AuthController@login → /
 ```
 
 **DB ที่เกี่ยวข้อง:** `users` + `wallets` (สร้างคู่กัน 1-to-1)
-รองรับ social login ภายหลัง (LINE / Facebook) ผ่าน `login_provider` + `provider_uid`
+รองรับ social login (LINE / Google) ผ่าน `login_provider` + `provider_uid` — ดู [API §13](#13-api-เข้าสู่ระบบ-rest)
 
 ---
 
@@ -323,32 +323,14 @@ available  →  reserved  →  sold  →  queue_live  →  opened  →  delivere
 
 External (วางแผน):
   - PromptPay Webhook  (ยืนยันการชำระ)
-  - LINE / Facebook Login (Socialite)
   - Laravel Reverb / WebSockets (real-time bid + live queue)
   - Filament Panel (Admin / Seller Dashboard)
-  - GitHub Pages (static mockup deploy ผ่าน BuildStatic command)
+
+External (พร้อมใช้แล้ว):
+  - LINE / Google Login (Socialite) — REST API + session-based
 ```
 
 ดู [README.md](README.md) สำหรับ tech stack เต็ม
-
----
-
-## 9. การทำงานของ Static Mockup Deploy
-
-```
-push → main
-  └─ .github/workflows/pages.yml
-       └─ php artisan static:build
-            ├─ Auto login demo user (PANYA, Gold tier)
-            ├─ Render Blade 15 หน้าเป็น .html
-            ├─ Rewrite asset paths เป็น relative
-            └─ output → docs/
-  └─ GitHub Actions deploy docs/ → Pages
-       URL: https://thitipongsaysood.github.io/TCG/
-```
-
-ข้อจำกัด: static = ฟอร์ม login/register submit จริงไม่ได้
-(POST routes ถูกตัดออก) — เหมาะสำหรับโชว์ UI เท่านั้น
 
 ---
 
@@ -358,7 +340,7 @@ push → main
 
 - [ ] เชื่อม controllers กับ Eloquent (ตอนนี้แสดง mockup ล้วน)
 - [ ] Seeder ข้อมูลตัวอย่าง (games / sets / shops / products)
-- [ ] LINE / Facebook Login (Socialite)
+- [x] LINE / Google Login (Socialite) — REST API พร้อมใช้งาน
 - [ ] PromptPay QR + Webhook ยืนยันการชำระ
 - [ ] Real-time bidding & live queue (Laravel Reverb / WebSockets)
 - [ ] Filament panel สำหรับ Admin / Seller Dashboard

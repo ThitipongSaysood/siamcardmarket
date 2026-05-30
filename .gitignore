@@ -30,8 +30,10 @@ Thumbs.db
 /รูป/
 /_legacy/
 /.claude/
-/docs/
 /text.text
 
 # AI agent private notes
 /.agents/private/
+
+# Skills installed via npx skills — reproducible from skills-lock.json
+/.agents/skills/

@@ -18,6 +18,14 @@ Route::middleware('guest')->group(function () {
     Route::post('/login',                [AuthController::class, 'login']);
     Route::get('/register',              [AuthController::class, 'showRegister'])->name('register');
     Route::post('/register',             [AuthController::class, 'register']);
+
+    // Social OAuth — server-side redirect flow (session-based)
+    Route::get('/login/{provider}/redirect', [AuthController::class, 'redirectToProvider'])
+        ->whereIn('provider', ['line', 'google'])
+        ->name('login.social.redirect');
+    Route::get('/login/{provider}/callback', [AuthController::class, 'handleProviderCallback'])
+        ->whereIn('provider', ['line', 'google'])
+        ->name('login.social.callback');
 });
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');

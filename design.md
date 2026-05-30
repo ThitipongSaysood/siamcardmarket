@@ -140,7 +140,7 @@
 | # | Route | View | หน้า |
 |---|---|---|---|
 | 1 | `/` | `home.blade.php` | Home — Live banner, หมวดเกม, Booster ล่าสุด, Auction Hot |
-| 2 | `/login` | `auth/login.blade.php` | Login — LINE / Facebook / Email |
+| 2 | `/login` | `auth/login.blade.php` | Login — LINE / Google / Email |
 | 3 | `/register` | `auth/register.blade.php` | สมัครสมาชิก |
 | 4 | `/products` | `products/index.blade.php` | แสดงสินค้า (Booster Pack) + filter |
 | 5 | `/products/{id}` | `products/show.blade.php` | รายละเอียดสินค้า + Serial example |
@@ -159,18 +159,19 @@
 
 ---
 
-## 8. โครงสร้างไฟล์ (Laravel 11)
+## 8. โครงสร้างไฟล์ (Laravel 13)
 
 ```
 TCG/
-├── design.md · database.md · README.md
+├── design.md · database.md · README.md · workflow.md
 ├── app/
-│   ├── Console/Commands/BuildStatic.php   (artisan static:build → docs/)
 │   ├── Http/Controllers/
-│   │   ├── Auth/AuthController.php        (login / register / logout)
-│   │   └── PageController.php             (15 หน้า)
-│   └── Models/User.php
-├── database/migrations/                   (0001 users + 6 domain migrations)
+│   │   ├── Auth/AuthController.php        (web login / register / logout — session)
+│   │   ├── Api/AuthController.php         (REST API auth — Sanctum token + Socialite)
+│   │   └── PageController.php             (15 Blade pages)
+│   ├── Http/Resources/UserResource.php
+│   └── Models/User.php · Wallet.php · WalletTransaction.php
+├── database/migrations/                   (users + 6 domain migrations + sanctum)
 ├── public/
 │   └── assets/{css,js,images}/            (style.css · main.js · 15 รูปการ์ด)
 ├── resources/views/
@@ -178,9 +179,9 @@ TCG/
 │   ├── partials/{navbar,drawer,tabbar,footer}.blade.php
 │   ├── auth/{login,register}.blade.php
 │   └── home + 12 หน้า domain (products, auctions, live, cart, ...)
-├── routes/web.php
-├── .github/workflows/pages.yml            (auto-deploy mockup → GitHub Pages)
-└── .agents/                                (AI context — AGENTS.md, sessions, ...)
+├── routes/web.php · routes/api.php        (web + REST API)
+├── tests/Feature/Api/AuthTest.php         (17 tests · 70 assertions · all passing)
+└── .agents/                                (AI context — AGENTS.md, CONTEXT.md, ...)
 ```
 
 ## 9. Iconography & Imagery
@@ -192,12 +193,10 @@ TCG/
 
 ---
 
-## 10. Static Mockup Deploy
+## 10. รันโปรเจค
 
-ใช้ `php artisan static:build` เรนเดอร์ Blade ทั้ง 15 หน้าเป็น `.html` ใน `docs/`
-แล้ว GitHub Actions ([.github/workflows/pages.yml](.github/workflows/pages.yml))
-deploy ขึ้น Pages ทุก push ไป `main`
+```bash
+php artisan serve   # → http://127.0.0.1:8000
+```
 
-- Build command **ยัด demo user (PANYA, Gold)** ไว้ใน Auth ก่อน render — หน้า static เลยโชว์ navbar แบบล็อกอินอยู่
-- URL ปัจจุบัน: **https://thitipongsaysood.github.io/TCG/**
-- Internal links + asset paths ถูก rewrite ให้เป็น relative path (ทำงานใต้ `/TCG/` ได้)
+หน้าเว็บทั้ง 15 routes ใช้งานจริงผ่าน Laravel + Blade · login/register submit ได้จริง · API auth (Sanctum) ที่ `/api/auth/*`

@@ -1,7 +1,50 @@
 # Database Schema — CARD ZONE (The Ultimate TCG Marketplace)
 
 ออกแบบฐานข้อมูลรองรับ 3 ระบบ: Front Website / Seller Dashboard / Admin System
-DB แนะนำ: **MySQL 8** หรือ **PostgreSQL** — ทุกตารางมี `created_at`, `updated_at`
+DB ที่ใช้จริง: **MariaDB 10.3** (DB name: `caed_zone`) — ทุกตารางมี `created_at`, `updated_at`
+
+> **SQL Source of Truth:** [database/caed_zone.sql](database/caed_zone.sql) (phpMyAdmin dump, 2026-05-26)
+> เอกสารนี้ sync จาก SQL จริงล่าสุด — ส่วนที่ยังไม่ implement ระบุชัดเจนใน §0
+
+---
+
+## 0. Implementation Status
+
+### ✅ Implemented (11 ตาราง — มีใน [caed_zone.sql](database/caed_zone.sql))
+
+| ตาราง | Records | หมวด |
+|------|---------|------|
+| `users` | 2 | สมาชิก |
+| `wallets` | 2 | สมาชิก |
+| `wallet_transactions` | 0 (schema only) | สมาชิก |
+| `games` | 2 | แคตตาล็อก |
+| `sets` | 2 | แคตตาล็อก |
+| `shops` | 1 | แคตตาล็อก |
+| `products` | 2 | แคตตาล็อก |
+| `product_serials` | 2 | แคตตาล็อก |
+| `orders` | 1 | คำสั่งซื้อ |
+| `order_items` | 1 | คำสั่งซื้อ |
+| `auctions` | 1 | ประมูล |
+| `bids` | 1 | ประมูล |
+
+### 📝 Planned (10 ตาราง — ยังไม่มีใน SQL จริง)
+
+| หมวด | ตาราง |
+|------|------|
+| ที่อยู่/ขนส่ง | `addresses`, `shipments` |
+| Live เปิดซอง | `live_sessions`, `live_queues` |
+| คลังการ์ด | `collection_items`, `wishlists` |
+| PSA | `psa_submissions`, `psa_items` |
+| Buy-Back | `buyback_listings`, `buyback_requests` |
+| ระบบ | `membership_tiers`, `notifications`, `audit_logs` |
+
+### ⚠️ Schema Drift (SQL จริง vs spec ใน §2-8)
+
+| จุด | SQL จริง | spec ในเอกสาร | แนวทาง |
+|-----|----------|---------------|--------|
+| `bids.locked_txn_id` | ❌ ไม่มี | มี (Anti-Spam Shield) | ต้องเพิ่ม migration ตอน implement wallet lock |
+| `sets.code` | VARCHAR(20) | VARCHAR(8) | spec ปรับเป็น VARCHAR(20) ตามจริง |
+| `users.email` | nullable + UNIQUE | UNIQUE NOT NULL | spec ปรับเป็น nullable (รองรับ social login ที่ยังไม่ผูก email) |
 
 ---
 
@@ -32,11 +75,11 @@ orders ──< shipments
 |---------|------|----------|
 | id | BIGINT PK AI | |
 | display_name | VARCHAR(80) | |
-| email | VARCHAR(160) UNIQUE | |
+| email | VARCHAR(160) UNIQUE | NULL ได้ (รองรับ social login ที่ยังไม่ผูก email) |
 | phone | VARCHAR(20) | |
 | password_hash | VARCHAR(255) | NULL ได้ถ้า login social |
-| login_provider | ENUM('email','line','facebook') | |
-| provider_uid | VARCHAR(120) | id จาก LINE/FB |
+| login_provider | ENUM('email','line','google') | |
+| provider_uid | VARCHAR(120) | id จาก LINE/Google |
 | avatar_url | VARCHAR(255) | |
 | membership_tier | ENUM('bronze','silver','gold','platinum') | default 'bronze' |
 | total_spent | DECIMAL(12,2) | ยอดซื้อสะสม (คิด tier) |
@@ -75,7 +118,7 @@ orders ──< shipments
 | id PK · code VARCHAR(8) UNIQUE (เช่น OP, PKM) · name (Pokémon, ONE PIECE...) · icon_url |
 
 ### 3.2 sets — เซ็ต
-| id PK · game_id FK · code (เช่น OP09) · name · release_date |
+| id PK · game_id FK · code VARCHAR(20) (เช่น OP09) · name VARCHAR(120) · release_date |
 
 ### 3.3 shops — ร้านค้าพาร์ทเนอร์
 | คอลัมน์ | ชนิด | หมายเหตุ |
@@ -173,7 +216,7 @@ orders ──< shipments
 | id PK · auction_id FK · user_id FK | | |
 | amount | DECIMAL(10,2) | |
 | is_auto_bid | BOOL | Auto Bid |
-| locked_txn_id | BIGINT FK→wallet_transactions | เครดิตที่ล็อกไว้ |
+| locked_txn_id | BIGINT FK→wallet_transactions | เครดิตที่ล็อกไว้ · ⚠️ **ยังไม่มีใน [caed_zone.sql](database/caed_zone.sql)** — ต้องเพิ่มตอน implement Wallet Lock |
 | status | ENUM('active','outbid','won','refunded') | Auto Refund |
 
 ---

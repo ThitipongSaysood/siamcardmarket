@@ -15,7 +15,7 @@ return new class extends Migration
             $table->string('phone', 20)->nullable();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password')->nullable();
-            $table->enum('login_provider', ['email', 'line', 'facebook'])->default('email');
+            $table->enum('login_provider', ['email', 'line', 'google'])->default('email');
             $table->string('provider_uid', 120)->nullable();
             $table->string('avatar_url', 255)->nullable();
             $table->enum('membership_tier', ['bronze', 'silver', 'gold', 'platinum'])->default('bronze');

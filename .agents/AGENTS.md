@@ -34,11 +34,6 @@
 
 - **Stack reference**: see root [`README.md`](../README.md), [`design.md`](../design.md)
   (UI tokens, components), [`database.md`](../database.md) (DB schema with 8 sections)
-- **Static mockup**: `php artisan static:build` renders all Blade pages to `docs/`
-  (gitignored). GitHub Pages workflow deploys on push to main. Customer-facing
-  demo URL → `https://thitipongsaysood.github.io/TCG/`
-- **Demo auth state**: `BuildStatic` command fakes a logged-in user (PANYA,
-  Gold tier) so the navbar shows the avatar chip instead of the login button
 - **Card images**: real card art lives in `public/assets/images/` —
   `op-*` = One Piece, `pkm-*` = Pokémon. Don't reintroduce gradient placeholders
 - **Mobile margin bug**: don't combine `container` + `section` on `<main>` —
